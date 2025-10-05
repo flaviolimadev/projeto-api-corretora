@@ -1,0 +1,123 @@
+// Prisma Schema para TradingView Scraper Database
+// Database: SQLite (Desenvolvimento)
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./trading.db"
+}
+
+generator client {
+  provider = "prisma-client-py"
+  interface = "asyncio"
+}
+
+// Tabela de Categorias
+model Category {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String
+  icon        String
+  exchanges   String   // JSON array
+  timeframes  String   // JSON array
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  assets      Asset[]
+  
+  @@map("categories")
+}
+
+// Tabela de Ativos
+model Asset {
+  id            String   @id @default(uuid())
+  symbol        String   @unique
+  exchange      String
+  ticker        String
+  description   String
+  type          String
+  categoryKey   String
+  searchQuery   String?
+  isActive      Boolean  @default(true)
+  lastUpdate    DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  category      Category @relation(fields: [categoryKey], references: [key], onDelete: Cascade)
+  candles       Candle[]
+  currentCandle CurrentCandle?
+  
+  @@map("assets")
+}
+
+// Tabela de Candles (Histórico)
+model Candle {
+  id         String   @id @default(uuid())
+  assetId    String
+  symbol     String
+  timeframe  String
+  timestamp  BigInt
+  datetime   DateTime
+  open       Float
+  high       Float
+  low        Float
+  close      Float
+  volume     Float
+  createdAt  DateTime @default(now())
+  
+  asset      Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  
+  @@unique([assetId, timeframe, timestamp])
+  @@map("candles")
+}
+
+// Tabela de Candle Atual
+model CurrentCandle {
+  id                  String   @id @default(uuid())
+  assetId             String   @unique
+  symbol              String   @unique
+  timeframe           String
+  timestamp           BigInt
+  datetime            DateTime
+  open                Float
+  high                Float
+  low                 Float
+  close               Float
+  volume              Float
+  priceChange         Float
+  priceChangePercent  Float
+  isPositive          Boolean
+  lastUpdate          DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  asset               Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  
+  @@map("current_candles")
+}
+
+// Tabela de Logs de Sincronização
+model SyncLog {
+  id          String   @id @default(uuid())
+  type        String
+  status      String
+  itemsCount  Int      @default(0)
+  errorMsg    String?
+  duration    Float?
+  startedAt   DateTime @default(now())
+  finishedAt  DateTime?
+  
+  @@map("sync_logs")
+}
+
+// Tabela de Configurações
+model Config {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("configs")
+}

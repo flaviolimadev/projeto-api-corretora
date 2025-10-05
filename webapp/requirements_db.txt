@@ -1,0 +1,21 @@
+# Core Requirements (já instalados)
+Flask==3.0.0
+flask-socketio==5.3.6
+flask-cors==4.0.0
+python-socketio==5.11.0
+eventlet==0.35.1
+tradingview-scraper==0.4.8
+requests
+
+# Database (Prisma não precisa de psycopg2)
+prisma
+python-dotenv
+
+# Async (asyncio já vem built-in no Python 3.7+)
+aiohttp
+
+# Background Tasks
+APScheduler
+
+# Utilities
+python-dateutil

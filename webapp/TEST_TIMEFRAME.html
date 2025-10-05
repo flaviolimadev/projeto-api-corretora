@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Timeframe</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #1a1a1a; 
+            color: white; 
+        }
+        .test-btn { 
+            padding: 10px 20px; 
+            margin: 5px; 
+            background: #333; 
+            color: white; 
+            border: 1px solid #555; 
+            cursor: pointer; 
+        }
+        .test-btn:hover { background: #555; }
+        .test-btn.active { background: #007bff; }
+        .log { 
+            background: #222; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            font-family: monospace; 
+            max-height: 300px; 
+            overflow-y: auto; 
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Teste de Timeframe</h1>
+    
+    <div>
+        <h3>Timeframes:</h3>
+        <button class="test-btn" data-tf="1m">1m</button>
+        <button class="test-btn" data-tf="5m">5m</button>
+        <button class="test-btn" data-tf="15m">15m</button>
+        <button class="test-btn" data-tf="1h">1h</button>
+        <button class="test-btn" data-tf="1d">1d</button>
+    </div>
+    
+    <div>
+        <h3>Controles:</h3>
+        <button id="start-btn">Iniciar Stream</button>
+        <button id="stop-btn" disabled>Parar Stream</button>
+    </div>
+    
+    <div>
+        <h3>Status:</h3>
+        <div id="status">Desconectado</div>
+    </div>
+    
+    <div>
+        <h3>Log:</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        let isStreaming = false;
+        let currentTimeframe = '1m';
+        
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const status = document.getElementById('status');
+        const log = document.getElementById('log');
+        
+        function addLog(message) {
+            const time = new Date().toLocaleTimeString();
+            log.innerHTML += `[${time}] ${message}<br>`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // Timeframe buttons
+        document.querySelectorAll('.test-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const newTimeframe = btn.dataset.tf;
+                
+                if (newTimeframe === currentTimeframe) {
+                    addLog(`⚠️ Timeframe ${newTimeframe} já está ativo`);
+                    return;
+                }
+                
+                if (!isStreaming) {
+                    addLog(`⚠️ Inicie o stream primeiro`);
+                    return;
+                }
+                
+                // Update UI
+                document.querySelectorAll('.test-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                addLog(`🔄 Mudando de ${currentTimeframe} para ${newTimeframe}`);
+                
+                // Stop and restart
+                socket.emit('stop_stream');
+                currentTimeframe = newTimeframe;
+                
+                setTimeout(() => {
+                    addLog(`🚀 Iniciando stream com timeframe ${newTimeframe}`);
+                    socket.emit('start_stream', {
+                        symbol: 'BINANCE:BTCUSDT',
+                        timeframe: newTimeframe
+                    });
+                }, 500);
+            });
+        });
+        
+        // Start/Stop buttons
+        startBtn.addEventListener('click', () => {
+            addLog(`🚀 Iniciando stream BINANCE:BTCUSDT (${currentTimeframe})`);
+            socket.emit('start_stream', {
+                symbol: 'BINANCE:BTCUSDT',
+                timeframe: currentTimeframe
+            });
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        });
+        
+        stopBtn.addEventListener('click', () => {
+            addLog(`⏹️ Parando stream`);
+            socket.emit('stop_stream');
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        });
+        
+        // Socket events
+        socket.on('stream_started', (data) => {
+            addLog(`✅ Stream iniciado: ${data.symbol} (${data.timeframe})`);
+            status.textContent = `Conectado - ${data.symbol} (${data.timeframe})`;
+            isStreaming = true;
+        });
+        
+        socket.on('stream_stopped', () => {
+            addLog(`⏹️ Stream parado`);
+            status.textContent = 'Desconectado';
+            isStreaming = false;
+        });
+        
+        socket.on('price_update', (data) => {
+            addLog(`📊 Dados recebidos: ${JSON.stringify(data).substring(0, 100)}...`);
+        });
+        
+        socket.on('error', (error) => {
+            addLog(`❌ Erro: ${error.message}`);
+        });
+        
+        // Set initial active
+        document.querySelector('[data-tf="1m"]').classList.add('active');
+    </script>
+</body>
+</html>
