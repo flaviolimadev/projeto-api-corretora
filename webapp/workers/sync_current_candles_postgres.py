@@ -96,7 +96,7 @@ def sync_current_candles():
                 
                 if current_candle:
                     try:
-                        success = postgres_manager.update_current_candle(current_candle)
+                        success = postgres_manager.update_current_candle(asset_id, current_candle)
                         if success:
                             total_updated += 1
                             logger.info(f"  {symbol}: ${current_candle['close']:.4f} ({current_candle['priceChangePercent']:+.2f}%)")

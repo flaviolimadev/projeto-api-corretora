@@ -53,47 +53,49 @@ def sync_candles():
                 try:
                     logger.info(f"  Buscando candles {timeframe}...")
                     
+                    # Parse exchange and ticker
+                    if ':' not in symbol:
+                        logger.warning(f"Símbolo inválido: {symbol}")
+                        continue
+                    
+                    exchange, ticker = symbol.split(':', 1)
+                    
                     # Usar Streamer para obter dados históricos
-                    streamer = Streamer()
-                    data_generator = streamer.get_historical_data(
-                        exchange_symbol=symbol,
+                    streamer = Streamer(export_result=True, export_type='json')
+                    historical_data = streamer.stream(
+                        exchange=exchange,
+                        symbol=ticker,
                         timeframe=timeframe,
-                        limit=1000  # Últimos 1000 candles
+                        numb_price_candles=1000  # Últimos 1000 candles
                     )
                     
                     candles_count = 0
-                    for packet in data_generator:
-                        if packet and 'm' in packet and packet['m'] == 'du' and 'p' in packet:
-                            data = packet['p']
-                            if len(data) > 1 and isinstance(data[1], dict):
-                                sds_data = data[1].get('sds_1', {})
-                                if 's' in sds_data and len(sds_data['s']) > 0:
-                                    candles = sds_data['s'][0].get('v', [])
-                                    
-                                    for candle_data in candles:
-                                        if len(candle_data) >= 6:
-                                            timestamp, open_price, high, low, close, volume = candle_data[:6]
-                                            
-                                            candle_record = {
-                                                'assetId': asset_id,
-                                                'symbol': symbol,
-                                                'timeframe': timeframe,
-                                                'timestamp': int(timestamp),
-                                                'datetime': datetime.fromtimestamp(timestamp),
-                                                'open': float(open_price),
-                                                'high': float(high),
-                                                'low': float(low),
-                                                'close': float(close),
-                                                'volume': float(volume)
-                                            }
-                                            
-                                            try:
-                                                success = postgres_manager.create_candle(candle_record)
-                                                if success:
-                                                    candles_count += 1
-                                                    total_candles += 1
-                                            except Exception as e:
-                                                logger.warning(f"Erro ao salvar candle: {e}")
+                    
+                    # Processar dados históricos
+                    if historical_data and 'ohlc' in historical_data and historical_data['ohlc']:
+                        for candle_data in historical_data['ohlc']:
+                            try:
+                                candle_record = {
+                                    'assetId': asset_id,
+                                    'symbol': symbol,
+                                    'timeframe': timeframe,
+                                    'timestamp': int(candle_data['timestamp']),
+                                    'datetime': datetime.fromtimestamp(candle_data['timestamp']),
+                                    'open': float(candle_data['open']),
+                                    'high': float(candle_data['high']),
+                                    'low': float(candle_data['low']),
+                                    'close': float(candle_data['close']),
+                                    'volume': float(candle_data['volume'])
+                                }
+                                
+                                success = postgres_manager.create_candle(candle_record)
+                                if success:
+                                    candles_count += 1
+                                    total_candles += 1
+                            except Exception as e:
+                                logger.warning(f"Erro ao salvar candle: {e}")
+                    else:
+                        logger.warning(f"Nenhum dado histórico encontrado para {symbol} {timeframe}")
                     
                     logger.info(f"  {candles_count} candles salvos para {timeframe}")
                     
