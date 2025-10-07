@@ -1,21 +1,22 @@
 [phases.setup]
-nixPkgs = ["python3", "gcc", "g++", "libpq-dev", "curl"]
+nixPkgs = ["python3", "python3Packages.pip", "gcc", "g++", "libpq-dev", "curl"]
 
 [phases.install]
 cmds = [
-    "pip install --upgrade pip",
-    "pip install -r requirements.txt"
+    "python3 -m pip install --upgrade pip",
+    "python3 -m pip install -r requirements.txt"
 ]
 
 [phases.build]
 cmds = [
-    "pip install -r requirements.txt"
+    "python3 -m pip install -r requirements.txt"
 ]
 
 [start]
-cmd = "cd webapp && gunicorn --bind 0.0.0.0:5000 --workers 4 --worker-class eventlet --worker-connections 1000 --timeout 120 --keep-alive 2 --max-requests 1000 --max-requests-jitter 100 app:app"
+cmd = "cd webapp && python3 -m gunicorn --bind 0.0.0.0:5000 --workers 4 --worker-class eventlet --worker-connections 1000 --timeout 120 --keep-alive 2 --max-requests 1000 --max-requests-jitter 100 app:app"
 
 [variables]
 PYTHONPATH = "/app/webapp:/app"
 FLASK_APP = "webapp/app.py"
 FLASK_ENV = "production"
+PATH = "/opt/venv/bin:$PATH"
