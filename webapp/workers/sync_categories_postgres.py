@@ -13,7 +13,7 @@ import os
 # Adicionar o diretório pai ao path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database.postgres_manager import postgres_manager
+from database.postgres_manager import PostgreSQLManager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,6 +27,9 @@ def sync_categories():
     """Sincronizar categorias do TradingView para PostgreSQL"""
     start_time = datetime.now()
     logger.info("Iniciando sincronização de categorias...")
+    
+    # Criar uma instância própria do manager para este worker
+    postgres_manager = PostgreSQLManager()
     
     try:
         # Conectar ao banco

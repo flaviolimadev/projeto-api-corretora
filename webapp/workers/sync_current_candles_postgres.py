@@ -14,7 +14,7 @@ import time
 # Adicionar o diretório pai ao path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database.postgres_manager import postgres_manager
+from database.postgres_manager import PostgreSQLManager
 from tradingview_scraper.symbols.stream import RealTimeData
 
 logging.basicConfig(
@@ -29,6 +29,9 @@ def sync_current_candles():
     """Sincronizar candles atuais do TradingView para PostgreSQL"""
     start_time = datetime.now()
     logger.info("Iniciando sincronização de candles atuais...")
+    
+    # Criar uma instância própria do manager para este worker
+    postgres_manager = PostgreSQLManager()
     
     try:
         # Conectar ao banco

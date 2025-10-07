@@ -32,6 +32,10 @@ class PostgreSQLManager:
     def connect(self):
         """Conectar ao banco"""
         try:
+            # Se já está conectado, retornar True
+            if self.connection and not self.connection.closed:
+                return True
+            
             self.connection = psycopg2.connect(**self.db_config)
             self.cursor = self.connection.cursor(cursor_factory=RealDictCursor)
             logger.info("Connected to PostgreSQL database")
@@ -64,6 +68,11 @@ class PostgreSQLManager:
     def execute_query(self, query: str, params: tuple = None) -> List[Dict]:
         """Executar query e retornar resultados"""
         try:
+            # Verificar se a conexão está ativa
+            if not self.connection or self.connection.closed:
+                logger.warning("Connection is closed, reconnecting...")
+                self.connect()
+            
             self.cursor.execute(query, params)
             if query.strip().upper().startswith('SELECT'):
                 return [dict(row) for row in self.cursor.fetchall()]
@@ -72,7 +81,8 @@ class PostgreSQLManager:
                 return []
         except Exception as e:
             logger.error(f"Error executing query: {e}")
-            self.connection.rollback()
+            if self.connection and not self.connection.closed:
+                self.connection.rollback()
             return []
     
     # ===== CATEGORIES =====
