@@ -1,11 +1,12 @@
-# Easypanel Configuration
-# Force use of custom Dockerfile
+version: '3.8'
 
 services:
   app:
-    type: docker
-    dockerfile: Dockerfile
-    port: 5000
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - API_HOST=0.0.0.0
@@ -20,3 +21,6 @@ services:
       - CACHE_ENABLED=True
       - CACHE_TTL=300
       - LOG_LEVEL=INFO
+    volumes:
+      - ./logs:/app/logs
+      - ./export:/app/export

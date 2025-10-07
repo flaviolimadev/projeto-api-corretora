@@ -65,10 +65,11 @@ export/
 *.bat
 *.sh
 
-# Nixpacks
+# Nixpacks - Force ignore
 .nixpacks/
 nixpacks.toml
 easypanel.yml
+Dockerfile.easypanel
 
 # Build artifacts
 build/
