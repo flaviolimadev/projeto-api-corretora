@@ -17,6 +17,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
+# Generate Prisma Client
+RUN cd webapp && prisma generate --schema=./prisma/schema.prisma
+
 # Create necessary directories
 RUN mkdir -p logs export
 
