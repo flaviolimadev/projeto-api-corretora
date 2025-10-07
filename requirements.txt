@@ -27,3 +27,7 @@ structlog==23.2.0
 
 # Security
 cryptography==41.0.8
+
+# Additional dependencies for Nixpacks
+setuptools
+wheel
