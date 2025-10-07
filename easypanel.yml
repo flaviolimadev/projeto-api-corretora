@@ -1,0 +1,31 @@
+# Easypanel Configuration for TradingView API
+version: '3.8'
+
+services:
+  tradingview-api:
+    build: .
+    container_name: tradingview-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - WORKER_ENABLED=true
+      - CACHE_ENABLED=true
+      - API_HOST=0.0.0.0
+      - API_PORT=5000
+      - SYNC_INTERVAL_CATEGORIES=3600
+      - SYNC_INTERVAL_ASSETS=1800
+      - SYNC_INTERVAL_CANDLES=60
+      - SYNC_INTERVAL_CURRENT=1
+    volumes:
+      - ./logs:/app/logs
+      - ./export:/app/export
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
