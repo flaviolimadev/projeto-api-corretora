@@ -31,5 +31,9 @@ ENV FLASK_ENV=production
 # Expose port
 EXPOSE 5000
 
-# Run the application with Gunicorn (production)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--worker-class", "eventlet", "--worker-connections", "1000", "--timeout", "120", "app:app"]
+# Copy entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Run the application with Gunicorn (production) and worker
+ENTRYPOINT ["/docker-entrypoint.sh"]
