@@ -178,6 +178,9 @@ def api_docs():
             'GET /api/categories': 'Lista de categorias disponíveis',
             'GET /api/categories/<category>': 'Detalhes de uma categoria',
             'GET /api/category-assets': 'Ativos de uma categoria',
+            'GET /api/assets/active': 'Lista apenas ativos ativos (isActive = true)',
+            'GET /api/assets/<id>/candles': 'Últimos 100 candles de um ativo',
+            'GET /api/assets/<id>/current-candle': 'Candle atual de um ativo',
             'GET /api/search-symbols': 'Buscar símbolos',
             'GET /api/cache/status': 'Status do cache',
             'GET /api/cache/clear': 'Limpar cache',
@@ -194,7 +197,10 @@ def api_docs():
             'candles': '/api/candles?symbol=BINANCE:BTCUSDT&timeframe=1h&limit=100',
             'current_candle': '/api/current-candle?symbol=BINANCE:BTCUSDT&timeframe=1m',
             'categories': '/api/categories',
-            'category_assets': '/api/category-assets?category=crypto&exchange=BINANCE&limit=20'
+            'category_assets': '/api/category-assets?category=crypto&exchange=BINANCE&limit=20',
+            'active_assets': '/api/assets/active?limit=50&category=crypto&exchange=BINANCE',
+            'asset_candles': '/api/assets/123/candles?timeframe=1h&limit=100',
+            'asset_current_candle': '/api/assets/123/current-candle'
         }
     }
     return jsonify(docs)
@@ -807,6 +813,282 @@ def is_valid_asset_for_category(symbol, category, exchange):
         return symbol_upper.endswith('!')
     
     return True  # Por padrão, aceitar todos os símbolos
+
+
+@app.route('/api/assets/active')
+def get_active_assets():
+    """
+    API para obter apenas ativos ativos (isActive = true)
+    
+    Parâmetros:
+    - limit: Número máximo de resultados (padrão: 100, máximo: 1000)
+    - category: Filtrar por categoria (opcional)
+    - exchange: Filtrar por exchange (opcional)
+    
+    Exemplos:
+    GET /api/assets/active
+    GET /api/assets/active?limit=50
+    GET /api/assets/active?category=crypto&exchange=BINANCE
+    """
+    try:
+        # Obter parâmetros
+        limit = min(int(request.args.get('limit', 100)), 1000)
+        category = request.args.get('category', '').strip().lower()
+        exchange = request.args.get('exchange', '').strip().upper()
+        
+        logger.info(f"API Request: Active assets - limit={limit}, category={category}, exchange={exchange}")
+        
+        # Conectar ao banco
+        if not postgres_manager.connect():
+            return jsonify({
+                'error': 'Falha ao conectar ao banco de dados'
+            }), 500
+        
+        # Buscar ativos ativos
+        assets_db = postgres_manager.get_active_assets(limit=limit)
+        
+        # Filtrar por categoria e exchange se fornecido
+        assets_filtered = assets_db
+        if category:
+            assets_filtered = [a for a in assets_filtered if a.get('category', '').lower() == category]
+        if exchange:
+            assets_filtered = [a for a in assets_filtered if a.get('exchange', '').upper() == exchange]
+        
+        postgres_manager.disconnect()
+        
+        # Converter para formato da API
+        assets = []
+        for asset_db in assets_filtered:
+            asset = {
+                'id': asset_db['id'],
+                'symbol': asset_db['symbol'],
+                'exchange': asset_db['exchange'],
+                'ticker': asset_db['ticker'],
+                'description': asset_db['description'],
+                'type': asset_db['type'],
+                'category': asset_db.get('category', ''),
+                'isActive': asset_db.get('isActive', False),
+                'createdAt': asset_db.get('createdAt', ''),
+                'updatedAt': asset_db.get('updatedAt', '')
+            }
+            assets.append(asset)
+        
+        response_data = {
+            'total_active_assets': len(assets),
+            'limit': limit,
+            'filters': {
+                'category': category if category else 'all',
+                'exchange': exchange if exchange else 'all'
+            },
+            'assets': assets,
+            'generated_at': datetime.now().isoformat(),
+            'timezone': 'UTC',
+            'source': 'database'
+        }
+        
+        logger.info(f"Active Assets Response: {len(assets)} active assets found")
+        return jsonify(response_data)
+        
+    except Exception as e:
+        logger.error(f"Error getting active assets: {e}")
+        return jsonify({
+            'error': 'Erro ao buscar ativos ativos',
+            'details': str(e)
+        }), 500
+
+
+@app.route('/api/assets/<asset_id>/candles')
+def get_asset_candles(asset_id):
+    """
+    API para obter os últimos 100 candles de um ativo específico
+    
+    Parâmetros:
+    - asset_id: ID do ativo no banco de dados
+    - timeframe: Timeframe (1m, 5m, 15m, 30m, 1h, 4h, 1d) - padrão: 1h
+    - limit: Número de candles (padrão: 100, máximo: 1000)
+    
+    Exemplo:
+    GET /api/assets/123/candles?timeframe=1h&limit=100
+    """
+    try:
+        # Obter parâmetros
+        timeframe = request.args.get('timeframe', '1h').strip()
+        limit = min(int(request.args.get('limit', 100)), 1000)
+        
+        # Validar timeframe
+        valid_timeframes = ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '1d', '1w', '1M']
+        if timeframe not in valid_timeframes:
+            return jsonify({
+                'error': 'Timeframe inválido',
+                'valid_timeframes': valid_timeframes,
+                'received': timeframe
+            }), 400
+        
+        logger.info(f"API Request: Asset {asset_id} candles - timeframe={timeframe}, limit={limit}")
+        
+        # Conectar ao banco
+        if not postgres_manager.connect():
+            return jsonify({
+                'error': 'Falha ao conectar ao banco de dados'
+            }), 500
+        
+        # Buscar informações do ativo
+        asset_query = 'SELECT * FROM assets WHERE id = %s'
+        asset_result = postgres_manager.execute_query(asset_query, (asset_id,))
+        
+        if not asset_result:
+            postgres_manager.disconnect()
+            return jsonify({
+                'error': 'Ativo não encontrado',
+                'asset_id': asset_id
+            }), 404
+        
+        asset = asset_result[0]
+        symbol = asset['symbol']
+        
+        # Buscar candles do ativo
+        candles_db = postgres_manager.get_candles(symbol, timeframe, limit)
+        postgres_manager.disconnect()
+        
+        # Converter para formato da API
+        candles = []
+        for candle in candles_db:
+            candles.append({
+                'timestamp': candle['timestamp'],
+                'datetime': candle['datetime'].isoformat() if candle.get('datetime') else '',
+                'open': float(candle['open']),
+                'high': float(candle['high']),
+                'low': float(candle['low']),
+                'close': float(candle['close']),
+                'volume': float(candle['volume'])
+            })
+        
+        response_data = {
+            'asset': {
+                'id': asset['id'],
+                'symbol': asset['symbol'],
+                'exchange': asset['exchange'],
+                'ticker': asset['ticker'],
+                'description': asset['description'],
+                'isActive': asset.get('isActive', False)
+            },
+            'timeframe': timeframe,
+            'total_candles': len(candles),
+            'limit': limit,
+            'candles': candles,
+            'generated_at': datetime.now().isoformat(),
+            'timezone': 'UTC',
+            'source': 'database'
+        }
+        
+        logger.info(f"Asset Candles Response: {len(candles)} candles for asset {asset_id}")
+        return jsonify(response_data)
+        
+    except ValueError as e:
+        return jsonify({
+            'error': 'Parâmetro inválido',
+            'details': str(e)
+        }), 400
+    except Exception as e:
+        logger.error(f"Error getting asset candles: {e}")
+        return jsonify({
+            'error': 'Erro ao buscar candles do ativo',
+            'details': str(e)
+        }), 500
+
+
+@app.route('/api/assets/<asset_id>/current-candle')
+def get_asset_current_candle(asset_id):
+    """
+    API para obter o candle atual de um ativo específico
+    
+    Parâmetros:
+    - asset_id: ID do ativo no banco de dados
+    
+    Exemplo:
+    GET /api/assets/123/current-candle
+    """
+    try:
+        logger.info(f"API Request: Asset {asset_id} current candle")
+        
+        # Conectar ao banco
+        if not postgres_manager.connect():
+            return jsonify({
+                'error': 'Falha ao conectar ao banco de dados'
+            }), 500
+        
+        # Buscar informações do ativo
+        asset_query = 'SELECT * FROM assets WHERE id = %s'
+        asset_result = postgres_manager.execute_query(asset_query, (asset_id,))
+        
+        if not asset_result:
+            postgres_manager.disconnect()
+            return jsonify({
+                'error': 'Ativo não encontrado',
+                'asset_id': asset_id
+            }), 404
+        
+        asset = asset_result[0]
+        
+        # Buscar candle atual do ativo
+        current_candle_query = '''
+            SELECT * FROM current_candles 
+            WHERE "assetId" = %s
+            ORDER BY "lastUpdate" DESC
+            LIMIT 1
+        '''
+        current_candle_result = postgres_manager.execute_query(current_candle_query, (asset_id,))
+        postgres_manager.disconnect()
+        
+        if not current_candle_result:
+            return jsonify({
+                'error': 'Candle atual não encontrado para este ativo',
+                'asset_id': asset_id,
+                'asset': {
+                    'symbol': asset['symbol'],
+                    'description': asset['description']
+                }
+            }), 404
+        
+        candle = current_candle_result[0]
+        
+        # Montar resposta
+        response_data = {
+            'asset': {
+                'id': asset['id'],
+                'symbol': asset['symbol'],
+                'exchange': asset['exchange'],
+                'ticker': asset['ticker'],
+                'description': asset['description'],
+                'isActive': asset.get('isActive', False)
+            },
+            'current_candle': {
+                'timestamp': candle['timestamp'],
+                'datetime': candle['datetime'].isoformat() if candle.get('datetime') else '',
+                'open': float(candle['open']),
+                'high': float(candle['high']),
+                'low': float(candle['low']),
+                'close': float(candle['close']),
+                'volume': float(candle['volume']),
+                'priceChange': float(candle.get('priceChange', 0)),
+                'priceChangePercent': float(candle.get('priceChangePercent', 0)),
+                'isPositive': candle.get('isPositive', False),
+                'lastUpdate': candle.get('lastUpdate', '').isoformat() if candle.get('lastUpdate') else ''
+            },
+            'generated_at': datetime.now().isoformat(),
+            'timezone': 'UTC',
+            'source': 'database'
+        }
+        
+        logger.info(f"Current Candle Response: Asset {asset_id} - {asset['symbol']}")
+        return jsonify(response_data)
+        
+    except Exception as e:
+        logger.error(f"Error getting asset current candle: {e}")
+        return jsonify({
+            'error': 'Erro ao buscar candle atual do ativo',
+            'details': str(e)
+        }), 500
 
 
 @socketio.on('connect')
