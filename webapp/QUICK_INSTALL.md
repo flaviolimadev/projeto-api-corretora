@@ -147,3 +147,4 @@ prisma db push --force-reset
 - ⏳ Primeira sincronização
 
 **Execute os comandos acima nesta ordem!** 🚀
+

@@ -207,3 +207,4 @@ Sent 1001/1000 candles
    - Observe os logs
 
 **Cole aqui todos os logs que aparecerem!** 📝
+

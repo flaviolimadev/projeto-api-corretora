@@ -381,3 +381,4 @@ psql -h localhost -p 51214 -U postgres template1 < backup.sql
 6. **Deploy em produção**
 
 **Sistema de banco de dados configurado e pronto para uso!** 🚀🗄️
+

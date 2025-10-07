@@ -121,3 +121,4 @@ model Config {
   
   @@map("configs")
 }
+

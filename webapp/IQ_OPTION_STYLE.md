@@ -231,3 +231,4 @@ Status: PERDENDO
 
 **Resultado: Visual IDÊNTICO ao IQ Option! 🎯**
 
+

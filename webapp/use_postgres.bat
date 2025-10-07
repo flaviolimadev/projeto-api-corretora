@@ -32,3 +32,4 @@ echo 2. python workers/sync_assets.py
 echo 3. python workers/main_worker.py
 echo.
 pause
+

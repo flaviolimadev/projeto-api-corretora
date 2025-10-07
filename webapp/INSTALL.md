@@ -96,3 +96,4 @@ Se encontrar problemas, verifique:
 2. Os logs no terminal/console
 3. O console do navegador (F12)
 
+

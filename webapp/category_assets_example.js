@@ -350,3 +350,4 @@ console.log('='.repeat(60));
 
 // Executar exemplo básico automaticamente
 exemploBasico();
+

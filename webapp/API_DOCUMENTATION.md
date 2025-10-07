@@ -370,3 +370,4 @@ Para dúvidas ou problemas:
 4. Confirme se o servidor está rodando
 
 **API pronta para uso!** 🚀📊
+

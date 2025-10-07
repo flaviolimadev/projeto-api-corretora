@@ -168,3 +168,4 @@ Após a correção, ao clicar em um novo timeframe:
 
 **Agora funciona perfeitamente!** 🚀
 
+

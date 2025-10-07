@@ -238,3 +238,4 @@ Para documentação detalhada, veja: `API_DOCUMENTATION.md`
 - ✅ **Scripts de teste**
 
 **API pronta para uso em qualquer aplicação!** 🚀📊
+

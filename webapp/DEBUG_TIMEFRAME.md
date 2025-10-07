@@ -154,3 +154,4 @@ Após a correção, ao clicar em um novo timeframe:
 5. ✅ **Console:** Logs de dados chegando
 
 **Teste agora e me diga o que acontece!** 🚀
+

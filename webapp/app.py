@@ -31,6 +31,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 thread_lock = Lock()
 active_connections = {}
 real_time_data = None
+start_time = time.time()
 
 
 def background_price_stream(symbol, timeframe, sid):
@@ -127,6 +128,76 @@ def background_price_stream(symbol, timeframe, sid):
 def index():
     """Render main page"""
     return render_template('index.html')
+
+
+@app.route('/api/health')
+def health_check():
+    """Health check endpoint for load balancers and monitoring"""
+    try:
+        # Test database connection
+        db_status = "healthy"
+        if not postgres_manager.connect():
+            db_status = "unhealthy"
+        else:
+            postgres_manager.disconnect()
+        
+        # Get basic stats
+        stats = {
+            'status': 'healthy' if db_status == 'healthy' else 'unhealthy',
+            'timestamp': datetime.now().isoformat(),
+            'version': '1.0.0',
+            'database': db_status,
+            'active_connections': len(active_connections),
+            'cache_size': len(current_candle_cache),
+            'uptime': time.time() - start_time if 'start_time' in globals() else 0
+        }
+        
+        status_code = 200 if db_status == 'healthy' else 503
+        return jsonify(stats), status_code
+        
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 503
+
+
+@app.route('/api/docs')
+def api_docs():
+    """API documentation endpoint"""
+    docs = {
+        'title': 'TradingView API',
+        'version': '1.0.0',
+        'description': 'API para dados de trading em tempo real',
+        'endpoints': {
+            'GET /api/health': 'Health check da API',
+            'GET /api/candles': 'Dados históricos de candles',
+            'GET /api/current-candle': 'Candle atual com cache',
+            'GET /api/categories': 'Lista de categorias disponíveis',
+            'GET /api/categories/<category>': 'Detalhes de uma categoria',
+            'GET /api/category-assets': 'Ativos de uma categoria',
+            'GET /api/search-symbols': 'Buscar símbolos',
+            'GET /api/cache/status': 'Status do cache',
+            'GET /api/cache/clear': 'Limpar cache',
+            'WebSocket /socket.io/': 'Stream de dados em tempo real'
+        },
+        'parameters': {
+            'symbol': 'Formato: EXCHANGE:SYMBOL (ex: BINANCE:BTCUSDT)',
+            'timeframe': '1m, 5m, 15m, 30m, 1h, 2h, 4h, 1d, 1w, 1M',
+            'limit': 'Número máximo de resultados (padrão: 1000)',
+            'category': 'crypto, forex, stocks, indices, commodities, bonds, etfs, futures',
+            'exchange': 'BINANCE, NASDAQ, NYSE, FXOPEN, etc.'
+        },
+        'examples': {
+            'candles': '/api/candles?symbol=BINANCE:BTCUSDT&timeframe=1h&limit=100',
+            'current_candle': '/api/current-candle?symbol=BINANCE:BTCUSDT&timeframe=1m',
+            'categories': '/api/categories',
+            'category_assets': '/api/category-assets?category=crypto&exchange=BINANCE&limit=20'
+        }
+    }
+    return jsonify(docs)
 
 
 @app.route('/api/search-symbols')

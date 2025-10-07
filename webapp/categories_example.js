@@ -297,3 +297,4 @@ console.log('='.repeat(50));
 
 // Executar exemplo básico automaticamente
 exemploBasico();
+

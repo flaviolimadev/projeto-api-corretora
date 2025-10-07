@@ -547,3 +547,4 @@ curl "http://localhost:5000/api/category-assets"
 6. **✅ Implementar monitoramento** de novos ativos
 
 **A API de Category Assets está completa e funcionando!** 🎉📈
+

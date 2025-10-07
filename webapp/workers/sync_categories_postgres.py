@@ -193,3 +193,4 @@ if __name__ == "__main__":
         print("  - Conexão com PostgreSQL")
         print("  - Tabelas criadas")
         print("  - Logs de erro acima")
+

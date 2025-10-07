@@ -186,3 +186,4 @@ python workers/sync_categories.py
 Isso vai popular o banco com as 8 categorias!
 
 **Quer que eu crie os workers restantes enquanto isso?** 🚀
+

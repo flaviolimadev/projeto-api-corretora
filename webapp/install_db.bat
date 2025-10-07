@@ -29,3 +29,4 @@ echo 1. python workers/sync_categories.py
 echo 2. python app_db.py
 echo.
 pause
+

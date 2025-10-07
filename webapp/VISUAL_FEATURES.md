@@ -207,3 +207,4 @@ T=60.1s → Resultado (notificação)
 
 **Tudo atualiza em TEMPO REAL conforme o preço se move! 🚀📈📉**
 
+

@@ -280,3 +280,4 @@ curl "http://localhost:5000/api/current-candle?symbol=BINANCE:BTCUSDT&timeframe=
 ```
 
 **Performance otimizada com sucesso!** ⚡📈
+

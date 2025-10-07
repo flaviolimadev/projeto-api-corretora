@@ -154,3 +154,4 @@ Você pode ajustar no código:
 
 **Divirta-se e bons trades! 📊🚀**
 
+

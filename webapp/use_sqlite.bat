@@ -27,3 +27,4 @@ echo 1. python workers/sync_categories.py
 echo 2. prisma studio (para visualizar dados)
 echo.
 pause
+

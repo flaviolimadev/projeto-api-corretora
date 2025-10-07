@@ -35,3 +35,4 @@ function testChart() {
 
 // Executar teste após 2 segundos
 setTimeout(testChart, 2000);
+

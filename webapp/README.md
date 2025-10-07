@@ -123,3 +123,4 @@ Este projeto usa a biblioteca `tradingview-scraper` sob licença MIT.
 
 Sinta-se livre para abrir issues ou pull requests para melhorias!
 
+

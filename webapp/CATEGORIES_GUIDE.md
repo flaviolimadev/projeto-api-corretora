@@ -442,3 +442,4 @@ curl "http://localhost:5000/api/categories"
 5. **✅ Adicionar filtros** por exchange ou timeframe
 
 **A API de Categorias está completa e funcionando!** 🎉📈
+

@@ -235,3 +235,4 @@ def test_category_assets_api():
 
 if __name__ == "__main__":
     test_category_assets_api()
+

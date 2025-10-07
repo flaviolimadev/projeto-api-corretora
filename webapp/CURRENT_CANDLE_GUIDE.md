@@ -329,3 +329,4 @@ curl "http://localhost:5000/api/current-candle?symbol=BINANCE:INVALID"
 5. **Crie dashboards** em tempo real
 
 **A API está otimizada para obter o candle atual de forma rápida e eficiente!** ⚡🎉
+

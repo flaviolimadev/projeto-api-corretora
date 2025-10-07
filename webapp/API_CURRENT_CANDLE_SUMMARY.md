@@ -243,3 +243,4 @@ Para dúvidas ou problemas:
 4. Teste com diferentes símbolos e timeframes
 
 **API Current Candle - Implementação 100% Concluída!** ✅🎉
+
