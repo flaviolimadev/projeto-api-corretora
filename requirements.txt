@@ -7,7 +7,7 @@ eventlet==0.35.1
 
 # TradingView Integration
 tradingview-scraper==0.4.8
-requests==2.31.0
+requests>=2.32.3
 
 # Database
 prisma==0.12.0
