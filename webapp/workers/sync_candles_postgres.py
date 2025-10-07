@@ -39,11 +39,11 @@ def sync_candles():
             raise Exception("Falha ao conectar ao banco de dados")
         
         # Obter ativos ativos
-        assets = postgres_manager.get_all_assets(limit=50)  # Limitar para teste
+        assets = postgres_manager.get_active_assets(limit=100)  # Apenas ativos ativos
         logger.info(f"Encontrados {len(assets)} ativos para sincronizar")
         
         total_candles = 0
-        timeframes = ['1m', '5m', '15m', '1h', '4h', '1d']
+        timeframes = ['1m']  # Apenas 1 minuto para otimização
         
         # Para cada ativo, buscar candles
         for asset in assets:
@@ -69,7 +69,7 @@ def sync_candles():
                         exchange=exchange,
                         symbol=ticker,
                         timeframe=timeframe,
-                        numb_price_candles=1000  # Últimos 1000 candles
+                        numb_price_candles=100  # Apenas 100 candles para otimização
                     )
                     
                     candles_count = 0
