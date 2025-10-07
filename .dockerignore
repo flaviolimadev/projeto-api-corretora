@@ -63,7 +63,7 @@ export/
 
 # Scripts
 *.bat
-*.sh
+# *.sh - Commented out to allow docker-entrypoint.sh
 
 # Nixpacks - Force ignore
 .nixpacks/
