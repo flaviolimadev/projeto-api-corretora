@@ -18,21 +18,23 @@ RUN apt-get update \
         g++ \
         libpq-dev \
         curl \
+        build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --upgrade pip \
+    && python -m pip install --no-cache-dir -r requirements.txt
 
 # Copy project
 COPY . .
 
 # Create logs directory
-RUN mkdir -p /app/logs
+RUN mkdir -p /app/logs /app/export
 
 # Create non-root user
-RUN adduser --disabled-password --gecos '' appuser
-RUN chown -R appuser:appuser /app
+RUN adduser --disabled-password --gecos '' appuser \
+    && chown -R appuser:appuser /app
 USER appuser
 
 # Expose port
